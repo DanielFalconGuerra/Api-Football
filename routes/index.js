@@ -1,5 +1,6 @@
 const express = require("express");
 const app = express();
+const path = require('path');
 
 const dotenv = require("dotenv");
 dotenv.config();
@@ -11,7 +12,7 @@ const {connection} = require("../database/config.db");
 app.get('/', (req, res) => {
     res.sendFile('index.html', {root: path.join(__dirname, 'public')});
   })
-  
+
 const getLiga = (request, response) => {
     connection.query("SELECT * FROM ligas", 
     (error, results) => {
