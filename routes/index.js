@@ -7,6 +7,11 @@ dotenv.config();
 //conexión con la base de datos
 const {connection} = require("../database/config.db");
 
+//index.js
+app.get('/', (req, res) => {
+    res.sendFile('index.html', {root: path.join(__dirname, 'public')});
+  })
+  
 const getLiga = (request, response) => {
     connection.query("SELECT * FROM ligas", 
     (error, results) => {
