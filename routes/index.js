@@ -38,3 +38,4 @@ app.route("/equipos").get(getEquipos);
 
 
 module.exports = app;
+
