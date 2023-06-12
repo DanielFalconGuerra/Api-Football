@@ -23,7 +23,8 @@ const getLiga = (request, response) => {
 };
 
 const getEquipos = (request, response) => {
-    connection.query(`select eq.IdEquipo, eq.Nombre, eq.Fundacion, eq.Escudo, es.Nombre as Estadio from (select * from equipo e where IdLiga = 1 ) eq
+    var IdLiga = request.params.idliga;
+    connection.query(`select eq.IdEquipo, eq.Nombre, eq.Fundacion, eq.Escudo, es.Nombre as Estadio from (select * from equipo e where IdLiga = ${IdLiga} ) eq
                         join estadio es on es.IdEstadio = eq.IdEstadio`, 
     (error, results) => {
         if(error)
@@ -34,7 +35,7 @@ const getEquipos = (request, response) => {
 
 //ruta
 app.route("/ligas").get(getLiga);
-app.route("/equipos").get(getEquipos);
+app.route("/equipos/:idliga").get(getEquipos);
 
 
 module.exports = app;
