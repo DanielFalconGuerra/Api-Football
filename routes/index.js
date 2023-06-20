@@ -11,7 +11,7 @@ const {connection} = require("../database/config.db");
 //index.js
 app.get('/', (req, res) => {
     res.sendFile('index.html', {root: path.join(__dirname, '..', 'public')});
-  })
+  }) 
 
 const getLiga = (request, response) => {
     connection.query("SELECT * FROM ligas", 
@@ -23,9 +23,18 @@ const getLiga = (request, response) => {
 };
 
 const getEquipos = (request, response) => {
-    var IdLiga = request.params.idliga;
-    connection.query(`select eq.IdEquipo, eq.Nombre, eq.Fundacion, eq.Escudo, es.Nombre as Estadio from (select * from equipo e where IdLiga = ${IdLiga} ) eq
-                        join estadio es on es.IdEstadio = eq.IdEstadio`, 
+    var NombreLiga = request.params.nombreliga;
+    var Edicion = request.params.edicion;
+    connection.query(`select d.IdEquipo, d.Posicion, e.Nombre, es.Nombre as Estadio, es.Ubicacion from (
+                        select * from (
+                            select t.IdTorneo, t.IdLiga, l.Nombre from (
+                                select IdEdicion from edicion where Edicion = '${Edicion}')edicion
+                        join Torneo t on t.IdEdicion = edicion.IdEdicion 
+                        join ligas l on l.IdLiga = t.IdLiga )liga
+                        where liga.Nombre = '${NombreLiga}')torneo
+                        join disputo d on d.IdTorneo = torneo.IdTorneo
+                        join equipo e on e.IdEquipo = d.IdEquipo 
+                        join estadio es on es.IdEstadio = e.IdEstadio`, 
     (error, results) => {
         if(error)
             throw error;
@@ -46,9 +55,13 @@ const GetPlayersByTeam = (request, response) => {
 };
 
 const GetTeamChampionships = (request, response) => {
-    var IdEquipo = request.params.idequipo;
-    connection.query(`select c.IdCampeonato, t.Nombre, c.cantidad from (select * from campeonato where IdEquipo = ${IdEquipo}) c 
-                        join titulo t on t.IdTitulo = c.IdTitulo`, 
+    var Team = request.params.team;
+    response.status(200).json('Team');
+    connection.query(`select c.IdCampeonato, t.Nombre, count(t.IdTitulo) as Cantidad from (
+                        select e.IdEquipo from equipo e where e.Nombre = '${Team}')equipo
+                        join campeonato c on c.IdEquipo = equipo.IdEquipo
+                        join titulo t on t.IdTitulo = c.IdTitulo
+                        group by c.IdTitulo`, 
     (error, results) => {
         if(error)
             throw error;
@@ -56,11 +69,11 @@ const GetTeamChampionships = (request, response) => {
     });
 };
 
+
 //ruta
 app.route("/ligas").get(getLiga);
-app.route("/jugadores/:idequipo").get(GetPlayersByTeam);
-app.route("/equipos/:idliga").get(getEquipos);
-app.route("/equipos/titulos/:idequipo").get(GetTeamChampionships);
+app.route("/equipos/:nombreliga/:edicion").get(getEquipos);
+app.route("/equipos/titulos/:team").get(GetTeamChampionships);
 
 
 module.exports = app;
