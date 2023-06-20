@@ -43,10 +43,15 @@ const getEquipos = (request, response) => {
 };
 
 const GetPlayersByTeam = (request, response) => {
-    var IdEquipo = request.params.idequipo;
-    connection.query(`select j.IdJugador, j.Nombre, j.Edad, j.Dorsal, p.Nombre as Pais, pos.Abreviacion, pos.Nombre as Posicion  from (select * from jugador where IdEquipo = ${IdEquipo})j
-                                            join pais p on p.IdPais = j.IdPais 
-                                            join posicion pos on pos.IdPosicion = j.IdPosicion`, 
+    var edicion = request.params.edicion;
+    var equipo = request.params.equipo;
+    connection.query(`select idjug.IdPertenecio, idjug.Dorsal, j.Nombre, po.Nombre as Posicion, po.Abreviacion from (
+                        select p.* from (select e.IdEquipo from equipo e where e.Nombre = '${equipo}') eq
+                        join pertenecio p on p.IdEquipo = eq.IdEquipo
+                        join (select ed.IdEdicion from edicion ed where ed.Edicion = '${edicion}') ed
+                        on ed.IdEdicion = p.IdEdicion) idjug
+                        join jugador j on j.IdJugador = idjug.IdJugador
+                        join posicion po on po.IdPosicion = idjug.IdPosicion`, 
     (error, results) => {
         if(error)
             throw error;
@@ -54,11 +59,10 @@ const GetPlayersByTeam = (request, response) => {
     });
 };
 
-const GetTeamChampionships = (request, response) => {
-    var Team = request.params.team;
-    response.status(200).json('Team');
+const getTeamChampionships = (request, response) => {
+    var equipo = request.params.equipo;
     connection.query(`select c.IdCampeonato, t.Nombre, count(t.IdTitulo) as Cantidad from (
-                        select e.IdEquipo from equipo e where e.Nombre = '${Team}')equipo
+                        select e.IdEquipo from equipo e where e.Nombre = '${equipo}')equipo
                         join campeonato c on c.IdEquipo = equipo.IdEquipo
                         join titulo t on t.IdTitulo = c.IdTitulo
                         group by c.IdTitulo`, 
@@ -73,7 +77,8 @@ const GetTeamChampionships = (request, response) => {
 //ruta
 app.route("/ligas").get(getLiga);
 app.route("/equipos/:nombreliga/:edicion").get(getEquipos);
-app.route("/equipos/titulos/:team").get(GetTeamChampionships);
+app.route("/equipo/titulos/:equipo").get(getTeamChampionships);
+app.route("/equipo/jugadores/:equipo/:edicion").get(GetPlayersByTeam);
 
 
 module.exports = app;
