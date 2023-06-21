@@ -73,12 +73,54 @@ const getTeamChampionships = (request, response) => {
     });
 };
 
+const getStandingsByLigue = (request, response) => {
+    var edicion = request.params.edicion;
+    var liga = request.params.liga;
+    connection.query(`select d.*, eq.Nombre from (select t.* from (select e.IdEdicion from edicion e where e.Edicion = '${edicion}')ed
+                        join Torneo t on t.IdEdicion = ed.IdEdicion)tor
+                        join (select * from ligas l where l.Nombre = '${liga}') li
+                        on li.IdLiga = tor.IdLiga
+                        join disputo d ON d.IdTorneo = tor.idTorneo
+                        join equipo eq on eq.IdEquipo = d.IdEquipo
+                        order by d.Posicion`, 
+    (error, results) => {
+        if(error)
+            throw error;
+        response.status(200).json(results);
+    });
+};
+
+const getStatisticsByLeague = (request, response) => {
+    var edicion = request.params.edicion;
+    var liga = request.params.liga;
+    var accion = request.params.accion;
+    connection.query(`select est.IdEstadisticas, est.Cantidad, est.Posicion, j.IdJugador, j.Nombre, po.Nombre as Posicion, po.Abreviacion, eq.Nombre as Equipo from (select e.IdEdicion from edicion e where e.Edicion = '${edicion}') ed
+                        join Torneo t on t.IdEdicion = ed.IdEdicion
+                        join (select * from ligas l where l.Nombre = '${liga}') li
+                        on li.IdLiga = t.IdLiga
+                        join (select es.* from (select ae.IdAccion from acciones_estadisticas ae where ae.Nombre = '${accion}') aces join estadisticas es on es.IdAccion = aces.IdAccion) est
+                        on t.IdTorneo = est.IdTorneo
+                        join pertenecio p on p.IdPertenecio = est.IdPertenecio 
+                        join jugador j on j.IdJugador = p.IdJugador 
+                        join equipo eq on eq.IdEquipo = p.IdEquipo 
+                        join posicion po on po.IdPosicion = p.IdPosicion
+                        order by est.Posicion asc`, 
+    (error, results) => {
+        if(error)
+            throw error;
+        response.status(200).json(results);
+    });
+};
+
 
 //ruta
 app.route("/ligas").get(getLiga);
 app.route("/equipos/:nombreliga/:edicion").get(getEquipos);
 app.route("/equipo/titulos/:equipo").get(getTeamChampionships);
 app.route("/equipo/jugadores/:equipo/:edicion").get(GetPlayersByTeam);
+app.route("/liga/:liga/posiciones/:edicion").get(getStandingsByLigue);
+app.route("/liga/estadisticas/:liga/:edicion/:accion").get(getStatisticsByLeague);
+
 
 
 module.exports = app;
